@@ -1,0 +1,103 @@
+{%- if tools is not defined or tools is none -%}
+    {%- set tools = [] -%}
+{%- endif -%}
+{{ bos_token }}
+{%- if messages[0]['role'] == 'system' -%}
+    {%- if messages[0]['content'] is string -%}
+        {%- set first_user_prefix = messages[0]['content'] + '
+
+' -%}
+    {%- else -%}
+        {%- set first_user_prefix = messages[0]['content'][0]['text'] + '
+
+' -%}
+    {%- endif -%}
+    {%- set loop_messages = messages[1:] -%}
+{%- else -%}
+    {%- set first_user_prefix = "" -%}
+    {%- set loop_messages = messages -%}
+{%- endif -%}
+{%- set tools_prefix -%}
+    {%- if tools -%}
+    {{- 'You have access to functions. If you decide to invoke any of the function(s),
+' -}}
+    {{- ' you MUST put it in the format of
+' -}}
+    {{- '{"name": function name, "parameters": dictionary of argument name and its value}
+' -}}
+    {{- '
+' -}}
+    {{- 'You SHOULD NOT include any other text in the response if you call a function
+' -}}
+    {{- '
+' -}}
+    {{- 'If you decide to invoke any of the function(s), it should be wrapped with ```tool_code```.
+' -}}
+    {{- '
+' -}}
+    {{- 'You have access to the following tools.
+' -}}
+    {%- for tool in tools -%}
+        {{- '
+' }}
+        {{- tool | tojson }}
+    {%- endfor -%}
+    {{- '
+
+' }}
+    {%- endif -%}
+{%- endset -%}
+{%- for message in loop_messages -%}
+    {%- if (message['role'] == 'assistant') -%}
+        {%- set role = "model" -%}
+    {%- else -%}
+        {%- set role = "user" -%}
+    {%- endif -%}
+    {{ '<start_of_turn>' + role + '
+' + (first_user_prefix if loop.first else "") + (tools_prefix if loop.first and tools else "") }}
+
+    {%- if message['role'] == 'tool' -%}
+        {{ "Here's the function response:
+```tool_code
+" }}
+    {%- endif -%}
+
+    {%- if message['content'] is string -%}
+        {{ message['content'] | trim }}
+    {%- elif message['content'] is iterable -%}
+        {%- for item in message['content'] -%}
+            {%- if item['type'] == 'image' -%}
+                {{ '<start_of_image>' }}
+            {%- elif item['type'] == 'text' -%}
+                {{ item['text'] | trim }}
+            {%- endif -%}
+        {%- endfor -%}
+    {%- elif message['content'] -%}
+        {{ raise_exception("Invalid content type") }}
+    {%- endif -%}
+
+    {%- if message['role'] == 'tool' -%}
+        {{ '
+```' }}
+    {%- endif -%}
+
+    {%- if message['role'] == 'assistant' and message.tool_calls and message.tool_calls is iterable and message.tool_calls is not mapping -%}
+        {{ '```tool_code
+' }}
+        {%- for tool_call in message.tool_calls -%}
+            {%- if tool_call.function is defined -%}
+                {%- set tool_call = tool_call.function -%}
+            {%- endif -%}
+{"name": "{{ tool_call.name }}", "parameters": {{ tool_call.arguments }}}
+        {%- endfor -%}
+        {{ '
+```' }}
+    {%- endif -%}
+
+    {{ '<end_of_turn>
+' }}
+{%- endfor -%}
+{%- if add_generation_prompt -%}
+    {{'<start_of_turn>model
+'}}
+{%- endif -%}

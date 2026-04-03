@@ -100,4 +100,9 @@
 {%- if add_generation_prompt -%}
     {{'<start_of_turn>model
 '}}
+    {%- if enable_thinking is defined and enable_thinking is false -%}
+        {{- "<unused94>thought\n<unused95>" -}}
+    {%- else -%}
+        {{- "<unused94>thought\n" -}}
+    {%- endif -%}
 {%- endif -%}

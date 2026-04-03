@@ -8,7 +8,7 @@ vllm serve unsloth/medgemma-1.5-4b-it \
  --reasoning-parser-plugin medgemma15_reasoning_parser.py \
  --reasoning-parser medgemma15
 
-tool parser also work on gemma3 or medgemma
+parser also work on gemma3 or medgemma
 
 dgx station v100
 sudo docker run \
@@ -33,3 +33,20 @@ vllm serve \
  --tool-parser-plugin medgemma15_tool_parser.py \
  --tool-call-parser medgemma15 \
 '
+
+curl http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+  "messages": [
+    {"role": "user", "content": "Case Scenario: A 72-year-old male with a history of hypertension and heart failure presents to the ER with confusion and profound weakness. He has been taking a water pill for his heart condition but recently increased the dose due to swelling in his ankles. Laboratory Results:  * Serum Sodium (Na+): 128 mEq/L (Normal: 135-145) * Serum Glucose: 540 mg/dL (Normal: 70-100) * Serum Potassium: 3.2 mEq/L (Normal: 3.5-5.0) * Blood Pressure: 110/70 mmHg  Question: What is the most appropriate next step in managing this patients sodium level, and why is a simple low sodium diagnosis misleading here?"}
+  ]
+}'
+
+curl http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+  "messages": [
+    {"role": "user", "content": "Case Scenario: A 72-year-old male with a history of hypertension and heart failure presents to the ER with confusion and profound weakness. He has been taking a water pill for his heart condition but recently increased the dose due to swelling in his ankles. Laboratory Results:  * Serum Sodium (Na+): 128 mEq/L (Normal: 135-145) * Serum Glucose: 540 mg/dL (Normal: 70-100) * Serum Potassium: 3.2 mEq/L (Normal: 3.5-5.0) * Blood Pressure: 110/70 mmHg  Question: What is the most appropriate next step in managing this patients sodium level, and why is a simple low sodium diagnosis misleading here?"}
+  ],
+  "chat_template_kwargs": {"enable_thinking": false}
+}'
